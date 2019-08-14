@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class DialogueManager : MonoBehaviour
 {
     private AudioClip dialogueAudio;
+    private const float _RATE = 44100.0f;
 
     private string[] fileLines;
 
@@ -152,7 +153,30 @@ public class DialogueManager : MonoBehaviour
 
                 Vector2 size = subtitleStyle.CalcSize(new GUIContent()); 
                 GUI.contentColor = Color.black;
+                GUI.Label(new Rect(Screen.width/2 - size.x/2 + 1, Screen.height/1.25f - size.y + 1, size.x, size.y), displaySubtitle, subtitleStyle);
+                GUI.contentColor = Color.white;
+                GUI.Label(new Rect(Screen.width/2 - size.x/2, Screen.height/1.25f - size.y, size.x, size.y), displaySubtitle, subtitleStyle);
+            }
+        }
+
+        //Increment nextSubtitle when we hit the associated time point
+        if(nextSubtitle < subtitleText.Count)
+        {
+            if(audio.timeSamples/ _RATE > subtitleTimings(nextSubtitle))
+            {
+                displaySubtitle = subtitleText[nextSubtitle];
+                nextSubtitle;
+            }
+        }
+
+        // Fire triggers when we hit the associated time point
+        if(nextTrigger < Triggers.Count)
+        {
+            if(audio.timeSamples/ _RATE > triggerTimings(nextTrigger))
+            {
+                GameObject.Find(triggerObjectNames[nextTrigger]).SendMessage(triggerMethod[nextTrigger]);
+                nextTrigger++;
             }
         }
     }
-}
+} 
