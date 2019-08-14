@@ -5,17 +5,55 @@ using UnityEngine.UI;
 
 public class audio_subtitle_tutorial_ : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    private string[] fileLines;
+    
+    //Subtitle variables
+    private List<string> subtitleLines = new List<string>();
+    
+    private List<string> subtitleTimingStrings = new List<string>();
+    private List<float> subtitleTimings = new List<float>();
+
+    public List<string> subtitleText = new List<string>();
+
+    private int nextSubtitle = 0;
+
+    private string displaySubtitle;
+
+    //Trigger variables
+    private List<string> triggerLines = new List<string>();
+    
+    private List<string> triggerTimingStrings = new List<string>();
+    public List<float> triggerTimings = new List<float>();
+
+    private List<string> triggers = new List<string>();
+    public List<string> triggerObjectNames = new List<string>();
+    public List<string> triggerMethodNames = new List<string>();
+
+    private int nextTrigger = 0;
+
+    
+    //Singleton Property
+    public static DialogueManager Instance{get; private set;}
+
+    void Awake()
     {
-        
+        if(Instance != null && Instance != this){
+            Destroy(gameObject);
+        }
+
+        Instance = this;
+
+        gameObject.AddComponent<AudioSource>();
+    
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    public void BeginDialogue(AudioClip passedClip){
+        //Set and play the audio clip
+        audio.clip = passedClip;
+
+        audio.Play();
     }
+
 
     // Get everything from the text file
     TextAsset temp = Resources.LoadAll("Dialogues/" + dialogueAudio.name) as TextAsset;
@@ -40,7 +78,7 @@ public class audio_subtitle_tutorial_ : MonoBehaviour
     {
         string[] splitTemp = subtitleLines[count].Split('|');
         subtitleTimingStrings.Add(splitTemp[0]);
-        subtitleTiming.Add(float.Parse(CleanTimeString(subtitleTimingStrings[count])));
+        subtitleTimings.Add(float.Parse(CleanTimeString(subtitleTimingsStrings[count])));
         subtitleText.Add(splitTemp[1]);
     }
 
