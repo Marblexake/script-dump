@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class DialogueManager : MonoBehaviour
+public class WasDialogueManager : MonoBehaviour
 {
     private AudioClip dialogueAudio;
     private const float _RATE = 44100.0f;
@@ -39,7 +39,7 @@ public class DialogueManager : MonoBehaviour
     private GUIStyle subtitleStyle = new GUIStyle();
 
     //Singleton Property
-    public static DialogueManager Instance { get; private set; }
+    public static WasDialogueManager Instance { get; private set; }
 
     void Awake()
     {
@@ -76,20 +76,20 @@ public class DialogueManager : MonoBehaviour
         nextTrigger = 0;
 
         // Get everything from the text file
-        TextAsset temp = Resources.LoadAll("Dialogues/" + dialogueAudio.name) as TextAsset;
+        TextAsset temp = Resources.Load("Dialogues/" + dialogueAudio.name) as TextAsset;
 
-        fileLines = temp.text.Split("/n");
+        fileLines = temp.text.Split('\n');
 
         // Split subtitle and trigger related lines into different lists
         foreach (string lines in fileLines)
         {
-            if (line.Contains("<trigger/>"))
+            if (lines.Contains("<trigger/>"))
             {
-                triggerLines.Add(line);
+                triggerLines.Add(lines);
             }
             else
             {
-                subtitleLines.Add(Line);
+                subtitleLines.Add(lines);
             }
         }
 
@@ -98,7 +98,7 @@ public class DialogueManager : MonoBehaviour
         {
             string[] splitTemp = subtitleLines[count].Split('|');
             subtitleTimingStrings.Add(splitTemp[0]);
-            subtitleTimings.Add(float.Parse(CleanTimeString(subtitleTimingsStrings[count])));
+            subtitleTimings.Add(float.Parse(CleanTimeString(subtitleTimingStrings[count])));
             subtitleText.Add(splitTemp[1]);
         }
 
@@ -106,30 +106,31 @@ public class DialogueManager : MonoBehaviour
         for (int count = 0; count < triggerLines.Count; count++)
         {
             string[] splitTemp1 = triggerLines[count].Split('|');
-            triggerTimingStrings.Add(splitTemp[0]);
-            triggerTiming.Add(float.Parse(CleanTimeString(triggerTimingStrings[count])));
+            triggerTimingStrings.Add(splitTemp1[0]);
+            triggerTimings.Add(float.Parse(CleanTimeString(triggerTimingStrings[count])));
 
             triggers.Add(splitTemp1[1]);
             string[] splitTemp2 = triggers[count].Split('-');
-            splitTemp2[0] = splitTemp2[0].Replace("<trigger/>");
+            splitTemp2[0] = splitTemp2[0].Replace("<trigger/>", "");
             triggerObjectNames.Add(splitTemp2[0]);
             triggerObjectNames.Add(splitTemp2[1]);
         }
-        
+
         // Set the initial subtitle text
-        if(subtitleText[0] != null)
+        if (subtitleText[0] != null)
         {
             // Just sets the very first displayed text to be the very first subtitle in the text file
             displaySubtitle = subtitleText[0];
         }
 
         //Set and play the audio clip
-        audio.clip = diaglogueAudio;
-        audio.Play();
+        GetComponent<AudioSource>().clip = dialogueAudio;
+        GetComponent<AudioSource>().Play();
     }
 
     //Remove all characters that are not part of the timing float
-    private string CleanTimeString(string timeString){
+    private string CleanTimeString(string timeString)
+    {
         Regex digitsOnly = new Regex(@"[^\d +(\.\d+)*$]");
         return digitsOnly.Replace(timeString, "");
     }
@@ -137,46 +138,46 @@ public class DialogueManager : MonoBehaviour
     void OnGUI()
     {
         //Make sure we are using a proper dialogueAudio file
-        if(dialogueAudio != null && audio.clip.name == dialogueAudio.name)
+        if (dialogueAudio != null && GetComponent<AudioSource>().clip.name == dialogueAudio.name)
         {
             // Check for <break/> or negative nextSubtitle
-            if(nextSubtitle > 0 && !subtitleText[nextSubtitle - 1].Contains("<break/>"))
+            if (nextSubtitle > 0 && !subtitleText[nextSubtitle - 1].Contains("<break/>"))
             {
                 //Create GUI
                 GUI.depth = -1001;
                 // Establishes what the GUI would look like
-                subtitleStyle.fixedWidth = ScreenWidth/1.5f;
+                subtitleStyle.fixedWidth = Screen.width / 1.5f;
                 subtitleStyle.wordWrap = true;
                 subtitleStyle.alignment = TextAnchor.MiddleCenter;
                 subtitleStyle.normal.textColor = Color.white;
-                subtitleStyle.fontSize = Mathf.FloorToInt(Screen.height = 0.0225f);
+                subtitleStyle.fontSize = Mathf.FloorToInt(Screen.height * 0.0225f);
 
-                Vector2 size = subtitleStyle.CalcSize(new GUIContent()); 
+                Vector2 size = subtitleStyle.CalcSize(new GUIContent());
                 GUI.contentColor = Color.black;
-                GUI.Label(new Rect(Screen.width/2 - size.x/2 + 1, Screen.height/1.25f - size.y + 1, size.x, size.y), displaySubtitle, subtitleStyle);
+                GUI.Label(new Rect(Screen.width / 2 - size.x / 2 + 1, Screen.height / 1.25f - size.y + 1, size.x, size.y), displaySubtitle, subtitleStyle);
                 GUI.contentColor = Color.white;
-                GUI.Label(new Rect(Screen.width/2 - size.x/2, Screen.height/1.25f - size.y, size.x, size.y), displaySubtitle, subtitleStyle);
+                GUI.Label(new Rect(Screen.width / 2 - size.x / 2, Screen.height / 1.25f - size.y, size.x, size.y), displaySubtitle, subtitleStyle);
             }
         }
 
         //Increment nextSubtitle when we hit the associated time point
-        if(nextSubtitle < subtitleText.Count)
+        if (nextSubtitle < subtitleText.Count)
         {
-            if(audio.timeSamples/ _RATE > subtitleTimings(nextSubtitle))
+            if (GetComponent<AudioSource>().timeSamples / _RATE > subtitleTimings[nextSubtitle])
             {
                 displaySubtitle = subtitleText[nextSubtitle];
-                nextSubtitle;
+                nextSubtitle++;
             }
         }
 
         // Fire triggers when we hit the associated time point
-        if(nextTrigger < Triggers.Count)
+        if (nextTrigger < triggers.Count)
         {
-            if(audio.timeSamples/ _RATE > triggerTimings(nextTrigger))
+            if (GetComponent<AudioSource>().timeSamples / _RATE > triggerTimings[nextTrigger])
             {
-                GameObject.Find(triggerObjectNames[nextTrigger]).SendMessage(triggerMethod[nextTrigger]);
+                GameObject.Find(triggerObjectNames[nextTrigger]).SendMessage(triggerMethodNames[nextTrigger]);
                 nextTrigger++;
             }
         }
     }
-} 
+}
